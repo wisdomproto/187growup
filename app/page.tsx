@@ -7,6 +7,9 @@ import XrayUpload from "@/components/XrayUpload";
 import XrayPreview from "@/components/XrayPreview";
 import MatchResultView from "@/components/MatchResultView";
 import BoneAgeInput from "@/components/BoneAgeInput";
+import { byGenderSorted, loadAtlas, neighborInSorted } from "@/lib/atlas";
+import { computeAge, matchByAge, todayIso } from "@/lib/matcher";
+import type { AtlasEntry, PatientInput } from "@/lib/types";
 
 // Chart.js/zoom plugin touches `window` at module init, so load on client only
 const PredictionResult = dynamic(() => import("@/components/PredictionResult"), {
@@ -17,9 +20,6 @@ const PredictionResult = dynamic(() => import("@/components/PredictionResult"), 
     </div>
   ),
 });
-import { loadAtlas } from "@/lib/atlas";
-import { computeAge, matchByAge, todayIso } from "@/lib/matcher";
-import type { AtlasEntry, PatientInput } from "@/lib/types";
 
 export default function Home() {
   const [patient, setPatient] = useState<PatientInput>({
@@ -29,6 +29,8 @@ export default function Home() {
   });
   const [atlas, setAtlas] = useState<AtlasEntry[] | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  /** Manual override for the younger (left) atlas. Resets whenever patient inputs change. */
+  const [manualYounger, setManualYounger] = useState<AtlasEntry | null>(null);
   const [boneAge, setBoneAge] = useState<number | null>(null);
   const [currentHeight, setCurrentHeight] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,10 +47,40 @@ export default function Home() {
     [patient.birthDate, patient.xrayDate],
   );
 
-  const result = useMemo(() => {
+  const sortedAtlas = useMemo(
+    () => (atlas ? byGenderSorted(atlas, patient.gender) : []),
+    [atlas, patient.gender],
+  );
+
+  const autoMatch = useMemo(() => {
     if (!atlas) return { patientAge: null, younger: null, older: null };
     return matchByAge(atlas, patient.gender, age);
   }, [atlas, patient.gender, age]);
+
+  // Reset manual override when gender or age changes
+  useEffect(() => {
+    setManualYounger(null);
+  }, [patient.gender, age]);
+
+  // Default younger = auto match (or first entry if age is unknown)
+  const effectiveYounger: AtlasEntry | null =
+    manualYounger ?? autoMatch.younger ?? sortedAtlas[0] ?? null;
+  const effectiveOlder: AtlasEntry | null =
+    neighborInSorted(sortedAtlas, effectiveYounger, 1);
+
+  const canStepUp =
+    effectiveYounger !== null &&
+    neighborInSorted(sortedAtlas, effectiveYounger, 1) !== null &&
+    // Also need an older after stepping (so right-panel still has content)
+    neighborInSorted(sortedAtlas, effectiveYounger, 2) !== null;
+  const canStepDown =
+    effectiveYounger !== null &&
+    neighborInSorted(sortedAtlas, effectiveYounger, -1) !== null;
+
+  const handleYoungerStep = (offset: number) => {
+    const next = neighborInSorted(sortedAtlas, effectiveYounger, offset);
+    if (next) setManualYounger(next);
+  };
 
   const handleFile = (file: File) => {
     setError(null);
@@ -91,22 +123,51 @@ export default function Home() {
       </section>
 
       <section className="rounded-lg border border-slate-200 p-5 space-y-4 bg-white">
-        <h2 className="text-base font-bold text-slate-800">③ Atlas 비교 (younger / patient / older)</h2>
-        <MatchResultView result={result} patient={patient} patientImageUrl={imageUrl} />
+        <h2 className="text-base font-bold text-slate-800">
+          ③ Atlas 비교 (younger / patient / older)
+          <span className="ml-2 text-xs font-normal text-slate-500">
+            ↑↓ 버튼으로 왼쪽 이미지의 나이를 조정하면 오른쪽이 자동으로 한 단계 뒤로 바뀝니다.
+          </span>
+        </h2>
+        {atlas ? (
+          <MatchResultView
+            patient={patient}
+            patientAge={age}
+            patientImageUrl={imageUrl}
+            younger={effectiveYounger}
+            older={effectiveOlder}
+            onYoungerStep={handleYoungerStep}
+            canStepUp={canStepUp}
+            canStepDown={canStepDown}
+          />
+        ) : (
+          <div className="text-sm text-slate-500">Atlas 로딩 중…</div>
+        )}
+        {manualYounger && (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => setManualYounger(null)}
+              className="rounded-md border border-slate-300 px-3 py-1 text-xs hover:bg-slate-50"
+            >
+              자동 매칭으로 초기화
+            </button>
+          </div>
+        )}
       </section>
 
       <section className="rounded-lg border border-slate-200 p-5 space-y-4 bg-white">
         <h2 className="text-base font-bold text-slate-800">④ 뼈나이 판독 & 현재 키</h2>
         <p className="text-xs text-slate-500">
           위 Atlas를 시각 비교해서 판단한 <strong>실제 뼈나이</strong>와 환자의 <strong>현재 키</strong>를 입력하세요.
-          퀵 버튼으로 younger/older 나이를 바로 채울 수 있습니다.
+          퀵 버튼으로 왼쪽/오른쪽 이미지 나이를 바로 채울 수 있습니다.
         </p>
         <BoneAgeInput
           boneAge={boneAge}
           onBoneAgeChange={setBoneAge}
           height={currentHeight}
           onHeightChange={setCurrentHeight}
-          match={result}
+          match={{ patientAge: age, younger: effectiveYounger, older: effectiveOlder }}
         />
       </section>
 
