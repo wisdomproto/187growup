@@ -1,7 +1,7 @@
 "use client";
 
 import type { MatchResult } from "@/lib/types";
-import { BP_AGE_MIN, BP_AGE_MAX } from "@/lib/growthPrediction";
+import { PRED_AGE_MIN, PRED_AGE_MAX } from "@/lib/growthPrediction";
 
 interface Props {
   /** Bone age (decimal years). null = not set yet. */
@@ -22,7 +22,7 @@ export default function BoneAgeInput({
   match,
 }: Props) {
   const outOfRange =
-    boneAge !== null && (boneAge < BP_AGE_MIN || boneAge > BP_AGE_MAX);
+    boneAge !== null && (boneAge < PRED_AGE_MIN || boneAge > PRED_AGE_MAX);
 
   const quick: { label: string; value: number }[] = [];
   if (match.younger) quick.push({ label: `${match.younger.age.toFixed(1)}세 (younger)`, value: match.younger.age });
@@ -65,7 +65,7 @@ export default function BoneAgeInput({
         )}
         {outOfRange && (
           <span className="text-xs text-amber-700">
-            Bayley-Pinneau 표는 {BP_AGE_MIN}~{BP_AGE_MAX}세만 지원합니다. 범위 밖은 경계값으로 근사합니다.
+            KDCA 성장 표준은 {PRED_AGE_MIN}~{PRED_AGE_MAX}세만 지원합니다. 범위 밖은 경계값으로 근사하여 참고용으로만 사용하세요.
           </span>
         )}
       </label>

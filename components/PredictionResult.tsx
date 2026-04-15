@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { GrowthChart } from "./GrowthChart";
 import {
-  predictAdultHeightBP,
+  predictAdultHeightByBonePercentile,
   buildProjectedCurve,
-  BP_AGE_MIN,
-  BP_AGE_MAX,
+  percentileAtBoneAge,
+  toLongGender,
+  PRED_AGE_MIN,
+  PRED_AGE_MAX,
 } from "@/lib/growthPrediction";
 import { calculateHeightPercentileLMS } from "@/lib/growthStandard";
-import { toLongGender } from "@/lib/growthPrediction";
 import type { Gender } from "@/lib/types";
 
 interface Props {
@@ -21,26 +22,30 @@ interface Props {
 }
 
 export default function PredictionResult({ gender, patientAge, boneAge, currentHeight }: Props) {
-  // Chart positioning falls back to bone age when DOB wasn't provided
+  // Dot on the chart: plot the patient at their CHRONOLOGICAL age (falls back
+  // to bone age when DOB isn't entered). Prediction math is driven by bone age.
   const chartAge = patientAge ?? boneAge;
+
   const adultHeight = useMemo(
-    () => predictAdultHeightBP(currentHeight, boneAge, gender),
+    () => predictAdultHeightByBonePercentile(currentHeight, boneAge, gender),
     [currentHeight, boneAge, gender],
   );
 
   const fullCurve = useMemo(
-    () => buildProjectedCurve(chartAge, currentHeight, gender, adultHeight),
-    [chartAge, currentHeight, gender, adultHeight],
+    () => buildProjectedCurve(boneAge, currentHeight, gender),
+    [boneAge, currentHeight, gender],
   );
 
-  const currentPercentile = useMemo(
+  // "Where does the child land today?" — percentile at bone age drives the prediction.
+  const bonePercentile = useMemo(
+    () => percentileAtBoneAge(currentHeight, boneAge, gender),
+    [currentHeight, boneAge, gender],
+  );
+
+  // For reference, also show percentile at chronological age (different curve).
+  const chronoPercentile = useMemo(
     () => calculateHeightPercentileLMS(currentHeight, chartAge, toLongGender(gender)),
     [currentHeight, chartAge, gender],
-  );
-
-  const adultPercentile = useMemo(
-    () => calculateHeightPercentileLMS(adultHeight, 18, toLongGender(gender)),
-    [adultHeight, gender],
   );
 
   // Animate: reveal projected curve point-by-point
@@ -63,14 +68,19 @@ export default function PredictionResult({ gender, patientAge, boneAge, currentH
   }, [fullCurve]);
 
   const visibleCurve = fullCurve.slice(0, revealed);
-  const outOfBP = boneAge < BP_AGE_MIN || boneAge > BP_AGE_MAX;
+  const outOfRange = boneAge < PRED_AGE_MIN || boneAge > PRED_AGE_MAX;
   const heightGain = adultHeight > 0 ? Math.round((adultHeight - currentHeight) * 10) / 10 : 0;
 
   return (
     <div className="space-y-4">
       {/* Key numbers */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Stat label="현재 키" value={`${currentHeight.toFixed(1)}cm`} sub={`${currentPercentile.toFixed(0)}%ile`} color="text-slate-800" />
+        <Stat
+          label="현재 키"
+          value={`${currentHeight.toFixed(1)}cm`}
+          sub={`역년령 ${chronoPercentile.toFixed(0)}%ile · 뼈나이 ${bonePercentile.toFixed(0)}%ile`}
+          color="text-slate-800"
+        />
         <Stat
           label="판독 뼈나이"
           value={`${boneAge.toFixed(1)}세`}
@@ -78,9 +88,9 @@ export default function PredictionResult({ gender, patientAge, boneAge, currentH
           color="text-slate-800"
         />
         <Stat
-          label="예상 성인키 (BP)"
+          label="예상 성인키"
           value={adultHeight > 0 ? `${adultHeight.toFixed(1)}cm` : "—"}
-          sub={adultHeight > 0 ? `18세 기준 ${adultPercentile.toFixed(0)}%ile` : undefined}
+          sub={adultHeight > 0 ? `뼈나이 ${bonePercentile.toFixed(0)}%ile 유지 가정` : undefined}
           color="text-indigo-600"
           emphasize
         />
@@ -92,9 +102,9 @@ export default function PredictionResult({ gender, patientAge, boneAge, currentH
         />
       </div>
 
-      {outOfBP && (
+      {outOfRange && (
         <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-800">
-          Bayley-Pinneau 표는 {BP_AGE_MIN}~{BP_AGE_MAX}세 골연령에 대해서만 정의됩니다. 범위 밖은 경계값으로 근사하여 참고용으로만 사용하세요.
+          KDCA 성장 표준은 {PRED_AGE_MIN}~{PRED_AGE_MAX}세 범위에서만 정의됩니다. 범위 밖은 경계값으로 근사하여 참고용으로만 사용하세요.
         </div>
       )}
 

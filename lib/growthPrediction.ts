@@ -1,106 +1,76 @@
-// Bayley-Pinneau adult height prediction + helpers tying into growthStandard.ts
-// Adapted from dflo_0.1 (187성장케어) for the BoneAgeAI app's 'M'|'F' gender type.
+// Adult-height prediction for BoneAgeAI: "same-percentile-at-bone-age" projection.
+//
+// Clinical reasoning: a child's height percentile at their BONE age (not
+// chronological age) tends to be preserved through puberty. So we:
+//   1. Find what percentile the current height lands on for the bone age,
+//   2. Extrapolate the same percentile out to age 18,
+//   3. Return that as the predicted adult height.
+//
+// This mirrors the doctor's workflow on the 187 클리닉 chart where the
+// projection line runs horizontally from the bone-age marker and rides
+// parallel to the standard percentile curves.
 
 import type { Gender } from "./types";
-import { heightAtSamePercentile } from "./growthStandard";
+import { heightAtSamePercentile, calculateHeightPercentileLMS } from "./growthStandard";
 
 /** BoneAgeAI 'M'|'F' → growthStandard 'male'|'female' */
 export function toLongGender(g: Gender): "male" | "female" {
   return g === "M" ? "male" : "female";
 }
 
-// ── Bayley–Pinneau (PAH) table: bone age (integer years) → % of adult height already achieved ──
+/** LMS data spans 2..18 years — warn the caller when we're outside that. */
+export const PRED_AGE_MIN = 2;
+export const PRED_AGE_MAX = 18;
 
-const BP_MALE: Record<number, number> = {
-  6: 68.5, 7: 72.5, 8: 75.5, 9: 78.5, 10: 81, 11: 83.5,
-  12: 86, 13: 88.5, 14: 91.5, 15: 94.5, 16: 97, 17: 99,
-};
-
-const BP_FEMALE: Record<number, number> = {
-  6: 73, 7: 76.5, 8: 80, 9: 83, 10: 86, 11: 89,
-  12: 92, 13: 95, 14: 97, 15: 98.5, 16: 99.5, 17: 100,
-};
-
-/** Bayley–Pinneau predicted adult height (cm). */
-export function predictAdultHeightBP(
+/**
+ * Predicted adult height: height at age 18 if the bone-age percentile is
+ * maintained. Returns 0 if inputs are invalid.
+ */
+export function predictAdultHeightByBonePercentile(
   currentHeight: number,
   boneAge: number,
   gender: Gender,
 ): number {
   if (currentHeight <= 0 || boneAge <= 0) return 0;
-  const table = gender === "M" ? BP_MALE : BP_FEMALE;
-  const floor = Math.floor(boneAge);
-  const ceil = Math.ceil(boneAge);
-  const lo = table[floor];
-  const hi = table[ceil];
-  if (lo === undefined && hi === undefined) return 0;
-
-  let pct: number;
-  if (floor === ceil || hi === undefined) pct = lo ?? 0;
-  else if (lo === undefined) pct = hi;
-  else {
-    const t = boneAge - floor;
-    pct = lo + t * (hi - lo);
-  }
-  if (pct <= 0) return 0;
-  return Math.round((currentHeight / (pct / 100)) * 10) / 10;
+  const g = toLongGender(gender);
+  const result = heightAtSamePercentile(currentHeight, boneAge, 18, g);
+  return Math.round(result * 10) / 10;
 }
 
-/** Supported BP bone-age range for display/warning purposes. */
-export const BP_AGE_MIN = 6;
-export const BP_AGE_MAX = 17;
+/** Percentile (0-100) of current height at the bone age. */
+export function percentileAtBoneAge(
+  currentHeight: number,
+  boneAge: number,
+  gender: Gender,
+): number {
+  return calculateHeightPercentileLMS(currentHeight, boneAge, toLongGender(gender));
+}
 
 /**
- * Build a yearly projected growth curve from the patient's current measurement
- * out to age 18, anchored to the BP-predicted adult height at 18.
- *
- * Middle points follow the "same-percentile" projection from the standard curve
- * (using chronological age of the patient) so the curve has a realistic shape,
- * but we scale it so that the 18-year-old endpoint lands exactly on the BP
- * prediction (which is the doctor-trusted number).
+ * Yearly projected curve from bone age to 18, riding the same percentile
+ * as the bone-age starting point. Each point is height-on-the-curve at
+ * that integer age.
  */
 export function buildProjectedCurve(
-  currentAge: number,
+  boneAge: number,
   currentHeight: number,
   gender: Gender,
-  predictedAdult: number,
 ): { age: number; height: number }[] {
-  if (predictedAdult <= 0 || currentAge >= 18) {
-    return [{ age: 18, height: predictedAdult }];
-  }
-  const longG = toLongGender(gender);
-  const startAge = Math.min(18, Math.max(2, currentAge));
-  const yearly: { age: number; height: number }[] = [];
+  if (currentHeight <= 0 || boneAge <= 0) return [];
+  const g = toLongGender(gender);
+  const start = Math.min(18, Math.max(PRED_AGE_MIN, boneAge));
+  const out: { age: number; height: number }[] = [{ age: start, height: currentHeight }];
 
-  // Raw same-percentile shape (start → 18)
-  const raw: { age: number; h: number }[] = [];
-  raw.push({ age: startAge, h: currentHeight });
-  const firstInt = Math.ceil(startAge + 0.0001);
+  // Walk integer years from the next year after `start` up through 18.
+  const firstInt = Math.ceil(start + 0.0001);
   for (let a = firstInt; a <= 18; a++) {
-    raw.push({ age: a, h: heightAtSamePercentile(currentHeight, startAge, a, longG) });
+    const h = heightAtSamePercentile(currentHeight, start, a, g);
+    out.push({ age: a, height: Math.round(h * 10) / 10 });
   }
-  // Ensure final point is exactly at 18
-  if (raw[raw.length - 1].age !== 18) {
-    raw.push({ age: 18, h: heightAtSamePercentile(currentHeight, startAge, 18, longG) });
+  // Guarantee an exact age-18 endpoint even if firstInt already hit 18.
+  if (out[out.length - 1].age !== 18) {
+    const h = heightAtSamePercentile(currentHeight, start, 18, g);
+    out.push({ age: 18, height: Math.round(h * 10) / 10 });
   }
-
-  // Scale so the 18-year endpoint matches the BP prediction exactly
-  const rawEnd = raw[raw.length - 1].h;
-  const startH = currentHeight;
-  const endH = predictedAdult;
-  const rawGrowth = rawEnd - startH || 1;
-
-  for (const { age, h } of raw) {
-    const progress = (h - startH) / rawGrowth; // 0..1 along the raw curve
-    const scaled = startH + progress * (endH - startH);
-    yearly.push({ age, height: Math.round(scaled * 10) / 10 });
-  }
-
-  // Deduplicate if start age collapsed with first integer
-  const unique: typeof yearly = [];
-  for (const p of yearly) {
-    if (unique.length && unique[unique.length - 1].age === p.age) continue;
-    unique.push(p);
-  }
-  return unique;
+  return out;
 }
