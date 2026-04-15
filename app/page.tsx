@@ -64,7 +64,7 @@ export default function Home() {
     setImageUrl(null);
   };
 
-  const canPredict = age !== null && boneAge !== null && currentHeight !== null && currentHeight > 0;
+  const canPredict = boneAge !== null && currentHeight !== null && currentHeight > 0;
 
   return (
     <main className="mx-auto max-w-6xl w-full px-4 py-6 space-y-6 text-slate-900 bg-white min-h-screen">
@@ -112,7 +112,7 @@ export default function Home() {
 
       <section className="rounded-lg border border-slate-200 p-5 space-y-4 bg-white">
         <h2 className="text-base font-bold text-slate-800">⑤ 예상 성인키 & 성장 곡선</h2>
-        {canPredict && age !== null && boneAge !== null && currentHeight !== null ? (
+        {canPredict && boneAge !== null && currentHeight !== null ? (
           <PredictionResult
             gender={patient.gender}
             patientAge={age}

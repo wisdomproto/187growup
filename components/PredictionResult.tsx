@@ -14,25 +14,28 @@ import type { Gender } from "@/lib/types";
 
 interface Props {
   gender: Gender;
-  patientAge: number;
+  /** Chronological age; if null, we use boneAge for chart positioning. */
+  patientAge: number | null;
   boneAge: number;
   currentHeight: number;
 }
 
 export default function PredictionResult({ gender, patientAge, boneAge, currentHeight }: Props) {
+  // Chart positioning falls back to bone age when DOB wasn't provided
+  const chartAge = patientAge ?? boneAge;
   const adultHeight = useMemo(
     () => predictAdultHeightBP(currentHeight, boneAge, gender),
     [currentHeight, boneAge, gender],
   );
 
   const fullCurve = useMemo(
-    () => buildProjectedCurve(patientAge, currentHeight, gender, adultHeight),
-    [patientAge, currentHeight, gender, adultHeight],
+    () => buildProjectedCurve(chartAge, currentHeight, gender, adultHeight),
+    [chartAge, currentHeight, gender, adultHeight],
   );
 
   const currentPercentile = useMemo(
-    () => calculateHeightPercentileLMS(currentHeight, patientAge, toLongGender(gender)),
-    [currentHeight, patientAge, gender],
+    () => calculateHeightPercentileLMS(currentHeight, chartAge, toLongGender(gender)),
+    [currentHeight, chartAge, gender],
   );
 
   const adultPercentile = useMemo(
@@ -68,7 +71,12 @@ export default function PredictionResult({ gender, patientAge, boneAge, currentH
       {/* Key numbers */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Stat label="현재 키" value={`${currentHeight.toFixed(1)}cm`} sub={`${currentPercentile.toFixed(0)}%ile`} color="text-slate-800" />
-        <Stat label="판독 뼈나이" value={`${boneAge.toFixed(1)}세`} sub={`역년령 ${patientAge.toFixed(1)}세`} color="text-slate-800" />
+        <Stat
+          label="판독 뼈나이"
+          value={`${boneAge.toFixed(1)}세`}
+          sub={patientAge !== null ? `역년령 ${patientAge.toFixed(1)}세` : "역년령 미입력"}
+          color="text-slate-800"
+        />
         <Stat
           label="예상 성인키 (BP)"
           value={adultHeight > 0 ? `${adultHeight.toFixed(1)}cm` : "—"}
@@ -94,7 +102,7 @@ export default function PredictionResult({ gender, patientAge, boneAge, currentH
       <div className="rounded-lg border border-slate-200 bg-white p-4">
         <GrowthChart
           gender={gender}
-          points={[{ age: patientAge, height: currentHeight }]}
+          points={[{ age: chartAge, height: currentHeight }]}
           predictedCurve={visibleCurve}
           predictedAdultHeight={adultHeight || undefined}
           showTitle
