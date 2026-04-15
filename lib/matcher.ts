@@ -1,106 +1,57 @@
-import { cropRoiToGray, loadImage } from "./image";
-import { combinedSimilarity } from "./similarity";
-import type {
-  AtlasEntry,
-  MatchCandidate,
-  MatchResult,
-  PatientInput,
-  RoiNorm,
-} from "./types";
+import type { AtlasEntry, Gender, MatchResult } from "./types";
 
-interface MatchParams {
-  patient: PatientInput;
-  patientImage: HTMLImageElement;
-  wristRoi: RoiNorm;
-  fingerRoi: RoiNorm;
-  atlas: AtlasEntry[];
-  /** Weight for wrist ROI in final score (0..1). Doctor's workflow prioritizes wrist. */
-  wristWeight?: number;
-  /** Grayscale patch size for similarity computation. */
-  patchSize?: number;
+const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
+
+/** Decimal years between two ISO date strings. Returns null if either is empty/invalid. */
+export function computeAge(birthDate: string, xrayDate: string): number | null {
+  if (!birthDate || !xrayDate) return null;
+  const b = new Date(birthDate);
+  const x = new Date(xrayDate);
+  if (Number.isNaN(b.getTime()) || Number.isNaN(x.getTime())) return null;
+  const diff = x.getTime() - b.getTime();
+  if (diff < 0) return null;
+  return diff / MS_PER_YEAR;
 }
 
-export async function runMatch({
-  patient,
-  patientImage,
-  wristRoi,
-  fingerRoi,
-  atlas,
-  wristWeight = 0.6,
-  patchSize = 128,
-}: MatchParams): Promise<MatchResult> {
-  const fingerWeight = 1 - wristWeight;
+/** Today in YYYY-MM-DD (local time). */
+export function todayIso(): string {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
 
-  // Crop patient ROIs once
-  const patientWrist = await cropRoiToGray(patientImage, wristRoi, patchSize);
-  const patientFinger = await cropRoiToGray(patientImage, fingerRoi, patchSize);
-
-  // Progressive filter: start with requested range, expand if <2 candidates
-  const ranges = [patient.ageRange, patient.ageRange + 1, patient.ageRange + 2, 999];
-  let candidates: AtlasEntry[] = [];
-  let effectiveRange = patient.ageRange;
-  let rangeExpanded = false;
-
-  for (const r of ranges) {
-    candidates = atlas.filter(
-      (e) => e.gender === patient.gender && Math.abs(e.age - patient.age) <= r,
-    );
-    effectiveRange = Math.min(r, 16); // cap display at 16
-    rangeExpanded = r > patient.ageRange;
-    if (candidates.length >= 2) break;
+/** Pick the atlas image immediately younger and immediately older than `age`. */
+export function matchByAge(
+  atlas: AtlasEntry[],
+  gender: Gender,
+  age: number | null,
+): MatchResult {
+  if (age === null) {
+    return { patientAge: null, younger: null, older: null };
   }
+  const pool = atlas
+    .filter((e) => e.gender === gender)
+    .sort((a, b) => a.age - b.age);
 
-  if (candidates.length === 0) {
+  // Largest age that is <= patient age
+  const younger = [...pool].reverse().find((e) => e.age <= age) ?? null;
+  // Smallest age that is >= patient age
+  const older = pool.find((e) => e.age >= age) ?? null;
+
+  // If exact match (age equals an atlas age), younger==older; split by taking neighbors
+  if (younger && older && younger.age === older.age) {
+    const idx = pool.indexOf(younger);
+    const altYounger = idx > 0 ? pool[idx - 1] : null;
+    const altOlder = idx < pool.length - 1 ? pool[idx + 1] : null;
     return {
-      younger: null,
-      older: null,
-      ranking: [],
-      estimated: null,
-      rangeExpanded,
-      effectiveRange,
+      patientAge: age,
+      // Keep the exact match on one side; put neighbor on the other.
+      younger: altYounger ?? younger,
+      older: altOlder ?? older,
     };
   }
 
-  // Score each candidate
-  const scored: MatchCandidate[] = [];
-  for (const e of candidates) {
-    const img = await loadImage(`/atlas/${e.file}`);
-    const atlasWrist = await cropRoiToGray(img, wristRoi, patchSize);
-    const atlasFinger = await cropRoiToGray(img, fingerRoi, patchSize);
-
-    const scoreWrist = combinedSimilarity(patientWrist.data, atlasWrist.data, patchSize);
-    const scoreFinger = combinedSimilarity(patientFinger.data, atlasFinger.data, patchSize);
-    const score = wristWeight * scoreWrist + fingerWeight * scoreFinger;
-    scored.push({ ...e, score, scoreWrist, scoreFinger });
-  }
-
-  scored.sort((a, b) => b.score - a.score);
-
-  // Pick younger/older relative to patient.age among scored
-  const younger = scored.filter((c) => c.age <= patient.age)[0] ?? null;
-  const older = scored.filter((c) => c.age >= patient.age && c !== younger)[0] ?? null;
-
-  // Estimate: similarity-weighted age between chosen two
-  let estimated: number | null = null;
-  if (younger && older) {
-    const sy = Math.max(0, younger.score);
-    const so = Math.max(0, older.score);
-    const denom = sy + so;
-    estimated = denom > 0
-      ? (younger.age * sy + older.age * so) / denom
-      : (younger.age + older.age) / 2;
-  } else if (younger) {
-    estimated = younger.age;
-  } else if (older) {
-    estimated = older.age;
-  }
-
-  return {
-    younger,
-    older,
-    ranking: scored.slice(0, 8),
-    estimated,
-    rangeExpanded,
-    effectiveRange,
-  };
+  return { patientAge: age, younger, older };
 }

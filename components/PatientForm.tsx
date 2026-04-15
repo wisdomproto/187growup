@@ -5,11 +5,13 @@ import type { PatientInput } from "@/lib/types";
 interface Props {
   value: PatientInput;
   onChange: (v: PatientInput) => void;
+  /** Chronological age in years computed from (xrayDate - birthDate). null if invalid. */
+  age: number | null;
 }
 
-export default function PatientForm({ value, onChange }: Props) {
+export default function PatientForm({ value, onChange, age }: Props) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
       <label className="flex flex-col gap-2 text-sm font-medium">
         성별
         <div className="flex gap-2">
@@ -31,32 +33,33 @@ export default function PatientForm({ value, onChange }: Props) {
       </label>
 
       <label className="flex flex-col gap-2 text-sm font-medium">
-        실제 나이 (세)
+        생년월일
         <input
-          type="number"
-          min={1}
-          max={18}
-          step={0.1}
-          value={value.age}
-          onChange={(e) =>
-            onChange({ ...value, age: Math.max(1, Math.min(18, Number(e.target.value) || 0)) })
-          }
+          type="date"
+          value={value.birthDate}
+          max={value.xrayDate || undefined}
+          onChange={(e) => onChange({ ...value, birthDate: e.target.value })}
           className="rounded-md border border-slate-300 px-3 py-2 text-slate-900"
         />
       </label>
 
       <label className="flex flex-col gap-2 text-sm font-medium">
-        나이 필터 범위
-        <select
-          value={value.ageRange}
-          onChange={(e) => onChange({ ...value, ageRange: Number(e.target.value) })}
+        X-ray 촬영일
+        <input
+          type="date"
+          value={value.xrayDate}
+          min={value.birthDate || undefined}
+          onChange={(e) => onChange({ ...value, xrayDate: e.target.value })}
           className="rounded-md border border-slate-300 px-3 py-2 text-slate-900"
-        >
-          <option value={1}>±1년 (기본)</option>
-          <option value={2}>±2년</option>
-          <option value={3}>±3년</option>
-        </select>
+        />
       </label>
+
+      <div className="flex flex-col gap-2 text-sm font-medium">
+        실제 나이
+        <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-slate-900 font-bold text-lg">
+          {age !== null ? `${age.toFixed(2)}세` : "—"}
+        </div>
+      </div>
     </div>
   );
 }
