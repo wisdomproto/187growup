@@ -116,7 +116,7 @@ export default function PredictionResult({ gender, patientAge, boneAge, currentH
           predictedCurve={visibleCurve}
           chronologicAge={patientAge}
           boneAge={boneAge}
-          currentHeight={currentHeight}
+          predictedAdultHeight={adultHeight || null}
           showTitle
         />
         {revealed < fullCurve.length && (

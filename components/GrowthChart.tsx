@@ -37,8 +37,8 @@ interface Props {
   chronologicAge?: number | null;
   /** Bone age vertical reference line (drawn dashed). */
   boneAge?: number | null;
-  /** Current height horizontal reference (red). */
-  currentHeight?: number | null;
+  /** Predicted adult height horizontal reference (red). */
+  predictedAdultHeight?: number | null;
   showTitle?: boolean;
 }
 
@@ -66,7 +66,7 @@ export function GrowthChart({
   predictedCurve,
   chronologicAge,
   boneAge,
-  currentHeight,
+  predictedAdultHeight,
   showTitle = true,
 }: Props) {
   const chartData = useMemo(() => {
@@ -106,12 +106,12 @@ export function GrowthChart({
         order: 11,
       });
     }
-    if (typeof currentHeight === "number") {
+    if (typeof predictedAdultHeight === "number" && predictedAdultHeight > 0) {
       refDatasets.push({
-        label: "현재 키",
+        label: "최종 예상키",
         data: [
-          { x: X_MIN, y: currentHeight },
-          { x: X_MAX, y: currentHeight },
+          { x: X_MIN, y: predictedAdultHeight },
+          { x: X_MAX, y: predictedAdultHeight },
         ],
         borderColor: COLORS.heightLine,
         borderWidth: 1.5,
@@ -181,7 +181,7 @@ export function GrowthChart({
           : []),
       ],
     };
-  }, [gender, points, predictedCurve, chronologicAge, boneAge, currentHeight]);
+  }, [gender, points, predictedCurve, chronologicAge, boneAge, predictedAdultHeight]);
 
   const options: Parameters<typeof Line>[0]["options"] = {
     responsive: true,
@@ -202,7 +202,7 @@ export function GrowthChart({
           padding: 10,
           // Only show percentile/series labels, hide ref-line entries to reduce clutter
           filter: (item: { text?: string }) =>
-            !!item.text && !["역년령", "뼈나이", "현재 키"].includes(item.text),
+            !!item.text && !["역년령", "뼈나이", "최종 예상키"].includes(item.text),
         },
       },
       tooltip: {
