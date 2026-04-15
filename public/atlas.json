@@ -1,0 +1,328 @@
+{
+  "entries": [
+    {
+      "gender": "F",
+      "age": 1.7,
+      "suffix": null,
+      "file": "female/F_01-7.webp"
+    },
+    {
+      "gender": "F",
+      "age": 2.5,
+      "suffix": null,
+      "file": "female/F_02-5.webp"
+    },
+    {
+      "gender": "F",
+      "age": 2.9,
+      "suffix": null,
+      "file": "female/F_02-9.webp"
+    },
+    {
+      "gender": "F",
+      "age": 3.3,
+      "suffix": null,
+      "file": "female/F_03-3.webp"
+    },
+    {
+      "gender": "F",
+      "age": 3.7,
+      "suffix": null,
+      "file": "female/F_03-7.webp"
+    },
+    {
+      "gender": "F",
+      "age": 5.1,
+      "suffix": null,
+      "file": "female/F_05-1.webp"
+    },
+    {
+      "gender": "F",
+      "age": 5.6,
+      "suffix": null,
+      "file": "female/F_05-6.webp"
+    },
+    {
+      "gender": "F",
+      "age": 6.1,
+      "suffix": null,
+      "file": "female/F_06-1.webp"
+    },
+    {
+      "gender": "F",
+      "age": 6.5,
+      "suffix": null,
+      "file": "female/F_06-5.webp"
+    },
+    {
+      "gender": "F",
+      "age": 6.9,
+      "suffix": null,
+      "file": "female/F_06-9.webp"
+    },
+    {
+      "gender": "F",
+      "age": 7.4,
+      "suffix": null,
+      "file": "female/F_07-4.webp"
+    },
+    {
+      "gender": "F",
+      "age": 7.8,
+      "suffix": null,
+      "file": "female/F_07-8.webp"
+    },
+    {
+      "gender": "F",
+      "age": 8.4,
+      "suffix": null,
+      "file": "female/F_08-4.webp"
+    },
+    {
+      "gender": "F",
+      "age": 9.1,
+      "suffix": null,
+      "file": "female/F_09-1.webp"
+    },
+    {
+      "gender": "F",
+      "age": 9.3,
+      "suffix": null,
+      "file": "female/F_09-3.webp"
+    },
+    {
+      "gender": "F",
+      "age": 9.8,
+      "suffix": null,
+      "file": "female/F_09-8.webp"
+    },
+    {
+      "gender": "F",
+      "age": 10.5,
+      "suffix": null,
+      "file": "female/F_10-5.webp"
+    },
+    {
+      "gender": "F",
+      "age": 10.8,
+      "suffix": null,
+      "file": "female/F_10-8.webp"
+    },
+    {
+      "gender": "F",
+      "age": 11.1,
+      "suffix": null,
+      "file": "female/F_11-1.webp"
+    },
+    {
+      "gender": "F",
+      "age": 11.7,
+      "suffix": null,
+      "file": "female/F_11-7.webp"
+    },
+    {
+      "gender": "F",
+      "age": 12.1,
+      "suffix": null,
+      "file": "female/F_12-1.webp"
+    },
+    {
+      "gender": "F",
+      "age": 12.5,
+      "suffix": null,
+      "file": "female/F_12-5.webp"
+    },
+    {
+      "gender": "F",
+      "age": 13.1,
+      "suffix": null,
+      "file": "female/F_13-1.webp"
+    },
+    {
+      "gender": "F",
+      "age": 13.8,
+      "suffix": "a",
+      "file": "female/F_13-8a.webp"
+    },
+    {
+      "gender": "F",
+      "age": 13.8,
+      "suffix": "b",
+      "file": "female/F_13-8b.webp"
+    },
+    {
+      "gender": "F",
+      "age": 14.7,
+      "suffix": null,
+      "file": "female/F_14-7.webp"
+    },
+    {
+      "gender": "M",
+      "age": 1.5,
+      "suffix": null,
+      "file": "male/M_01-5.webp"
+    },
+    {
+      "gender": "M",
+      "age": 2.1,
+      "suffix": null,
+      "file": "male/M_02-1.webp"
+    },
+    {
+      "gender": "M",
+      "age": 3.1,
+      "suffix": null,
+      "file": "male/M_03-1.webp"
+    },
+    {
+      "gender": "M",
+      "age": 3.6,
+      "suffix": null,
+      "file": "male/M_03-6.webp"
+    },
+    {
+      "gender": "M",
+      "age": 3.8,
+      "suffix": null,
+      "file": "male/M_03-8.webp"
+    },
+    {
+      "gender": "M",
+      "age": 5,
+      "suffix": null,
+      "file": "male/M_05-0.webp"
+    },
+    {
+      "gender": "M",
+      "age": 5.3,
+      "suffix": null,
+      "file": "male/M_05-3.webp"
+    },
+    {
+      "gender": "M",
+      "age": 6.3,
+      "suffix": null,
+      "file": "male/M_06-3.webp"
+    },
+    {
+      "gender": "M",
+      "age": 6.7,
+      "suffix": null,
+      "file": "male/M_06-7.webp"
+    },
+    {
+      "gender": "M",
+      "age": 7.1,
+      "suffix": null,
+      "file": "male/M_07-1.webp"
+    },
+    {
+      "gender": "M",
+      "age": 7.9,
+      "suffix": null,
+      "file": "male/M_07-9.webp"
+    },
+    {
+      "gender": "M",
+      "age": 8.2,
+      "suffix": null,
+      "file": "male/M_08-2.webp"
+    },
+    {
+      "gender": "M",
+      "age": 8.6,
+      "suffix": null,
+      "file": "male/M_08-6.webp"
+    },
+    {
+      "gender": "M",
+      "age": 9.2,
+      "suffix": null,
+      "file": "male/M_09-2.webp"
+    },
+    {
+      "gender": "M",
+      "age": 9.4,
+      "suffix": null,
+      "file": "male/M_09-4.webp"
+    },
+    {
+      "gender": "M",
+      "age": 9.9,
+      "suffix": null,
+      "file": "male/M_09-9.webp"
+    },
+    {
+      "gender": "M",
+      "age": 10.3,
+      "suffix": null,
+      "file": "male/M_10-3.webp"
+    },
+    {
+      "gender": "M",
+      "age": 11.1,
+      "suffix": null,
+      "file": "male/M_11-1.webp"
+    },
+    {
+      "gender": "M",
+      "age": 11.6,
+      "suffix": null,
+      "file": "male/M_11-6.webp"
+    },
+    {
+      "gender": "M",
+      "age": 11.9,
+      "suffix": null,
+      "file": "male/M_11-9.webp"
+    },
+    {
+      "gender": "M",
+      "age": 12.3,
+      "suffix": null,
+      "file": "male/M_12-3.webp"
+    },
+    {
+      "gender": "M",
+      "age": 13.2,
+      "suffix": null,
+      "file": "male/M_13-2.webp"
+    },
+    {
+      "gender": "M",
+      "age": 13.4,
+      "suffix": null,
+      "file": "male/M_13-4.webp"
+    },
+    {
+      "gender": "M",
+      "age": 13.8,
+      "suffix": null,
+      "file": "male/M_13-8.webp"
+    },
+    {
+      "gender": "M",
+      "age": 14.5,
+      "suffix": null,
+      "file": "male/M_14-5.webp"
+    },
+    {
+      "gender": "M",
+      "age": 15.1,
+      "suffix": null,
+      "file": "male/M_15-1.webp"
+    },
+    {
+      "gender": "M",
+      "age": 15.3,
+      "suffix": null,
+      "file": "male/M_15-3.webp"
+    },
+    {
+      "gender": "M",
+      "age": 16.1,
+      "suffix": null,
+      "file": "male/M_16-1.webp"
+    }
+  ]
+}
