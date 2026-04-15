@@ -14,11 +14,13 @@ interface LMSRow {
 
 // ── 퍼센타일 데이터 (차트 표시용, LMS에서 자동 계산) ──
 
-interface HeightPercentile {
+export interface HeightPercentile {
   age: number;
-  p5: number;
+  p3: number;
+  p15: number;
   p50: number;
-  p95: number;
+  p85: number;
+  p97: number;
 }
 
 /** LMS에서 특정 Z-score에 해당하는 키 역산 */
@@ -31,13 +33,21 @@ function heightFromLMS(lms: LMSRow, z: number): number {
   return Math.round(lms.M * Math.pow(inside, 1 / lms.L) * 10) / 10;
 }
 
-/** LMS 테이블에서 p5/p50/p95 표준곡선 생성 */
+// Inverse normal CDF values used as the standard percentile z-scores.
+const Z_P3 = -1.881;
+const Z_P15 = -1.036;
+const Z_P85 = 1.036;
+const Z_P97 = 1.881;
+
+/** LMS 테이블에서 3/15/50/85/97 퍼센타일 표준곡선 생성 */
 function buildPercentiles(table: LMSRow[]): HeightPercentile[] {
   return table.map((lms) => ({
     age: lms.age,
-    p5: heightFromLMS(lms, -1.645),
+    p3: heightFromLMS(lms, Z_P3),
+    p15: heightFromLMS(lms, Z_P15),
     p50: Math.round(lms.M * 10) / 10,
-    p95: heightFromLMS(lms, 1.645),
+    p85: heightFromLMS(lms, Z_P85),
+    p97: heightFromLMS(lms, Z_P97),
   }));
 }
 

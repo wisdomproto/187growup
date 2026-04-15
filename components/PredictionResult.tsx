@@ -104,7 +104,9 @@ export default function PredictionResult({ gender, patientAge, boneAge, currentH
           gender={gender}
           points={[{ age: chartAge, height: currentHeight }]}
           predictedCurve={visibleCurve}
-          predictedAdultHeight={adultHeight || undefined}
+          chronologicAge={patientAge}
+          boneAge={boneAge}
+          currentHeight={currentHeight}
           showTitle
         />
         {revealed < fullCurve.length && (
